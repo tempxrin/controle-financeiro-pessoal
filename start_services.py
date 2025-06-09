@@ -1,4 +1,4 @@
-# start_services.py - Excel Edition
+# start_services.py - Corrigido para Railway
 import subprocess
 import threading
 import time
@@ -12,8 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('services.log'),
-        logging.StreamHandler()
+        logging.StreamHandler()  # Apenas console para Railway
     ]
 )
 logger = logging.getLogger(__name__)
@@ -61,12 +60,6 @@ def setup_excel_environment():
         else:
             logger.info(f"✅ Arquivo Excel encontrado: {excel_file}")
         
-        # Criar pasta de backup se configurada
-        backup_folder = config['storage'].get('backup_folder')
-        if backup_folder and not os.path.exists(backup_folder):
-            os.makedirs(backup_folder)
-            logger.info(f"✅ Pasta de backup criada: {backup_folder}")
-        
         return True
         
     except Exception as e:
@@ -77,26 +70,16 @@ def run_bot():
     """Executar bot do Telegram"""
     logger.info("🤖 Iniciando bot do Telegram...")
     try:
-        result = subprocess.run([sys.executable, 'bot_telegram.py'], 
-                              capture_output=True, text=True, check=True)
-        logger.info("Bot executado com sucesso")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Erro ao executar bot: {e}")
-        logger.error(f"Stdout: {e.stdout}")
-        logger.error(f"Stderr: {e.stderr}")
+        subprocess.run([sys.executable, 'bot_telegram.py'], check=False)
     except Exception as e:
-        logger.error(f"❌ Erro inesperado no bot: {e}")
+        logger.error(f"❌ Erro no bot: {e}")
 
 def run_dashboard():
     """Executar dashboard Streamlit"""
     logger.info("📊 Iniciando dashboard Streamlit...")
     
-    # Carregar configurações
-    config = load_config()
-    port = str(config['dashboard']['port']) if config else '8501'
-    
-    # Usar PORT do ambiente se disponível (Railway)
-    port = os.getenv('PORT', port)
+    # IMPORTANTE: Usar PORT do Railway
+    port = os.getenv('PORT', '8501')
     
     try:
         cmd = [
@@ -105,27 +88,67 @@ def run_dashboard():
             '--server.port', port,
             '--server.headless', 'true',
             '--server.fileWatcherType', 'none',
-            '--browser.gatherUsageStats', 'false',
-            '--theme.base', 'dark'
+            '--browser.gatherUsageStats', 'false'
         ]
         
-        logger.info(f"Executando dashboard na porta {port}")
-        result = subprocess.run(cmd, check=True)
-        logger.info("Dashboard executado com sucesso")
+        logger.info(f"🚀 Executando dashboard na porta {port}")
+        subprocess.run(cmd, check=True)
         
-    except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Erro ao executar dashboard: {e}")
     except Exception as e:
-        logger.error(f"❌ Erro inesperado no dashboard: {e}")
+        logger.error(f"❌ Erro no dashboard: {e}")
+        raise
 
 def check_environment():
-    """Verificar variáveis de ambiente e arquivos necessários"""
+    """Verificar ambiente"""
     logger.info("🔍 Verificando ambiente...")
     
-    # Verificar arquivos necessários
-    required_files = ['config.yaml', 'bot_telegram.py', 'dashboard.py']
-    missing_files = []
+    # Verificar token do Telegram
+    telegram_token = os.getenv('TELEGRAM_TOKEN')
+    if not telegram_token:
+        # Tentar carregar do config
+        config = load_config()
+        if config:
+            telegram_token = config.get('telegram', {}).get('token')
     
-    for file in required_files:
-        if not os.path.exists(file):
-            missing_files.append(file)
+    if not telegram_token or telegram_token == "SEU_TOKEN_AQUI":
+        logger.error("❌ TELEGRAM_TOKEN não configurado")
+        return False
+    
+    logger.info("✅ Ambiente verificado")
+    return True
+
+def main():
+    """Função principal"""
+    logger.info("🚀 Iniciando Controle Financeiro Excel Edition...")
+    
+    # Verificar ambiente
+    if not check_environment():
+        logger.error("❌ Falha na verificação do ambiente")
+        sys.exit(1)
+    
+    # Configurar Excel
+    if not setup_excel_environment():
+        logger.error("❌ Falha na configuração do Excel")
+        sys.exit(1)
+    
+    # No Railway, executar bot em background e dashboard em foreground
+    logger.info("🚄 Modo Railway - Iniciando serviços...")
+    
+    # Bot em thread separada
+    bot_thread = threading.Thread(target=run_bot, daemon=True)
+    bot_thread.start()
+    logger.info("✅ Bot iniciado em background")
+    
+    # Dashboard no processo principal (OBRIGATÓRIO para Railway)
+    time.sleep(3)
+    logger.info("✅ Iniciando dashboard...")
+    run_dashboard()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        logger.info("🛑 Aplicação encerrada")
+    except Exception as e:
+        logger.error(f"❌ Erro crítico: {e}")
+        sys.exit(1)

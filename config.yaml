@@ -3,7 +3,7 @@
 
 # Configurações do Telegram Bot
 telegram:
-  token: "SEU_TOKEN_AQUI"  # Obter via @BotFather
+  token: "7867979251:AAH-4IP2bcNqyYHUuX-O7T2a1b4o4i2BdFk"  # Obter via @BotFather
   
 # Configurações de Storage - Excel
 storage:
