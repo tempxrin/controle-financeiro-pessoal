@@ -1,0 +1,132 @@
+# config.yaml
+# Configurações do Sistema de Controle Financeiro - Excel Edition
+
+# Configurações do Telegram Bot
+telegram:
+  token: "SEU_TOKEN_AQUI"  # Obter via @BotFather
+  
+# Configurações de Storage - Excel
+storage:
+  excel_file: "financeiro_pessoal.xlsx"  # Nome do arquivo Excel
+  backup_folder: "backups/"  # Pasta para backups automáticos
+  auto_backup: true  # Backup automático diário
+  max_backups: 30  # Número máximo de backups a manter
+  
+# Configurações do Bot
+bot:
+  extrato_limit: 10  # Número máximo de transações no extrato
+  max_valor: 999999.99  # Valor máximo permitido por transação
+  timezone: "America/Sao_Paulo"
+  allow_edit: false  # Permitir edição de transações (futuro)
+  require_description: false  # Tornar descrição obrigatória
+
+# Categorias Disponíveis
+categories:
+  receitas:
+    - "salario"
+    - "freelance"
+    - "vendas"
+    - "investimentos"
+    - "bonus"
+    - "presente"
+    - "reembolso"
+    - "outros"
+    
+  gastos:
+    - "alimentacao"
+    - "transporte"
+    - "moradia"
+    - "saude"
+    - "educacao"
+    - "lazer"
+    - "roupas"
+    - "tecnologia"
+    - "viagem"
+    - "emergencia"
+    - "servicos"
+    - "impostos"
+    - "outros"
+
+# Configurações do Dashboard Streamlit
+dashboard:
+  title: "💰 Controle Financeiro Pessoal - Excel Edition"
+  theme: "dark"  # dark ou light
+  port: 8501
+  auto_refresh: 60  # Atualizar dados a cada 60 segundos
+  max_rows_table: 1000  # Máximo de linhas na tabela
+  
+# Configurações de Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  files:
+    bot: "bot.log"
+    dashboard: "dashboard.log"
+    services: "services.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# Configurações de Segurança e Backup
+security:
+  encrypt_backup: false  # Criptografar backups (futuro)
+  password_protect: false  # Proteger Excel com senha (futuro)
+  export_formats: ["xlsx", "csv"]  # Formatos de export disponíveis
+  
+# Configurações de Alertas (futuro)
+alerts:
+  enabled: false
+  budget_alerts: true
+  daily_summary: false
+  weekly_report: false
+  
+# Mensagens Personalizadas
+messages:
+  welcome: |
+    🏦 *Bem-vindo ao Controle Financeiro Pessoal!*
+    
+    📊 Seus dados são salvos automaticamente em planilha Excel.
+    🔒 Total privacidade - tudo fica no seu servidor!
+    
+  help: |
+    *Comandos disponíveis:*
+    • `/receita [valor] [categoria] [descrição]` - Adicionar receita
+    • `/gasto [valor] [categoria] [descrição]` - Adicionar gasto
+    • `/saldo` - Ver saldo atual
+    • `/extrato` - Ver últimas transações
+    • `/categorias` - Ver categorias disponíveis
+    • `/backup` - Receber backup Excel pessoal
+    
+    *Exemplos:*
+    `/receita 1500.00 salario Salário de janeiro`
+    `/gasto 50.00 alimentacao Almoço no restaurante`
+    
+  error_generic: "❌ Ocorreu um erro. Tente novamente em alguns instantes."
+  error_excel: "❌ Problema ao acessar arquivo Excel."
+  error_format: "❌ Formato incorreto. Use `/ajuda` para ver exemplos."
+  
+  success_receita: "✅ Receita adicionada com sucesso! 💵"
+  success_gasto: "✅ Gasto adicionado com sucesso! 💸"
+  
+# Configurações de Performance
+performance:
+  cache_duration: 60  # Segundos para cache do dashboard
+  batch_size: 1000  # Número de transações para processar por vez
+  excel_engine: "openpyxl"  # Engine para ler/escrever Excel
+  
+# Configurações de Internacionalização
+locale:
+  currency: "BRL"
+  currency_symbol: "R$"
+  date_format: "%d/%m/%Y"
+  datetime_format: "%d/%m/%Y %H:%M:%S"
+  decimal_separator: ","
+  thousands_separator: "."
+
+# Configurações de Features Futuras
+features:
+  enable_goals: false  # Metas financeiras
+  enable_budgets: false  # Orçamentos por categoria
+  enable_recurring: false  # Transações recorrentes
+  enable_multiple_accounts: false  # Múltiplas contas
+  enable_reports: true  # Relatórios avançados
+  enable_charts: true  # Gráficos avançados
