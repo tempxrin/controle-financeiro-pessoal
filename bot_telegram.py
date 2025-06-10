@@ -1,6 +1,5 @@
-# bot_telegram.py
+# bot_telegram.py - Corrigido para Railway
 import os
-import asyncio
 import logging
 from datetime import datetime
 import pandas as pd
@@ -13,7 +12,6 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('bot.log'),
         logging.StreamHandler()
     ]
 )
@@ -23,10 +21,17 @@ class FinanceBot:
     def __init__(self):
         self.config = self.load_config()
         self.excel_file = self.config['storage']['excel_file']
-        self.token = self.config['telegram']['token']
+        self.token = self.get_token()
         self.init_excel_file()
         
         logger.info("Bot inicializado com storage Excel")
+    
+    def get_token(self):
+        """Obter token do ambiente ou config"""
+        token = os.getenv('TELEGRAM_TOKEN')
+        if not token:
+            token = self.config['telegram']['token']
+        return token
     
     def load_config(self):
         """Carregar configurações do arquivo YAML"""
@@ -209,21 +214,11 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                     "*Exemplo:* `/receita 1500.00 salario Salário mensal`",
                     parse_mode='Markdown'
                 )
-                logger.warning(f"Comando /receita com argumentos insuficientes - {username}")
                 return
             
             valor = float(args[0].replace(',', '.'))
             categoria = args[1].lower() if len(args) > 1 else "outros"
             descricao = " ".join(args[2:]) if len(args) > 2 else ""
-            
-            # Validar valor máximo
-            if valor > self.config['bot']['max_valor']:
-                await update.message.reply_text(
-                    f"❌ *Valor muito alto!*\n\n"
-                    f"Limite máximo: R$ {self.config['bot']['max_valor']:,.2f}",
-                    parse_mode='Markdown'
-                )
-                return
             
             # Validar categoria
             if categoria not in self.config['categories']['receitas']:
@@ -233,7 +228,6 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                     f"*Categorias de receita:* {categorias_validas}",
                     parse_mode='Markdown'
                 )
-                logger.warning(f"Categoria inválida '{categoria}' - {username}")
                 return
             
             # Salvar no Excel
@@ -244,11 +238,9 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                     f"✅ *Receita adicionada com sucesso!*\n\n"
                     f"💵 Valor: R$ {valor:.2f}\n"
                     f"📂 Categoria: {categoria.title()}\n"
-                    f"📝 Descrição: {descricao}\n"
-                    f"📊 Salvo em: {self.excel_file}",
+                    f"📝 Descrição: {descricao}",
                     parse_mode='Markdown'
                 )
-                logger.info(f"Receita adicionada - {username}: R$ {valor:.2f} ({categoria})")
             else:
                 await update.message.reply_text("❌ Erro ao salvar receita. Tente novamente.")
             
@@ -258,10 +250,9 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                 "Use números com ponto ou vírgula (ex: 100.50 ou 100,50)",
                 parse_mode='Markdown'
             )
-            logger.error(f"Valor inválido no comando /receita - {username}")
         except Exception as e:
             await update.message.reply_text("❌ Erro interno. Tente novamente.")
-            logger.error(f"Erro ao adicionar receita - {username}: {e}")
+            logger.error(f"Erro ao adicionar receita: {e}")
     
     async def adicionar_gasto(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Adicionar gasto"""
@@ -277,21 +268,11 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                     "*Exemplo:* `/gasto 50.00 alimentacao Almoço`",
                     parse_mode='Markdown'
                 )
-                logger.warning(f"Comando /gasto com argumentos insuficientes - {username}")
                 return
             
             valor = float(args[0].replace(',', '.'))
             categoria = args[1].lower() if len(args) > 1 else "outros"
             descricao = " ".join(args[2:]) if len(args) > 2 else ""
-            
-            # Validar valor máximo
-            if valor > self.config['bot']['max_valor']:
-                await update.message.reply_text(
-                    f"❌ *Valor muito alto!*\n\n"
-                    f"Limite máximo: R$ {self.config['bot']['max_valor']:,.2f}",
-                    parse_mode='Markdown'
-                )
-                return
             
             # Validar categoria
             if categoria not in self.config['categories']['gastos']:
@@ -301,7 +282,6 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                     f"*Categorias de gasto:* {categorias_validas}",
                     parse_mode='Markdown'
                 )
-                logger.warning(f"Categoria inválida '{categoria}' - {username}")
                 return
             
             # Salvar no Excel
@@ -312,11 +292,9 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                     f"✅ *Gasto adicionado com sucesso!*\n\n"
                     f"💸 Valor: R$ {valor:.2f}\n"
                     f"📂 Categoria: {categoria.title()}\n"
-                    f"📝 Descrição: {descricao}\n"
-                    f"📊 Salvo em: {self.excel_file}",
+                    f"📝 Descrição: {descricao}",
                     parse_mode='Markdown'
                 )
-                logger.info(f"Gasto adicionado - {username}: R$ {valor:.2f} ({categoria})")
             else:
                 await update.message.reply_text("❌ Erro ao salvar gasto. Tente novamente.")
             
@@ -326,10 +304,9 @@ _Seus dados são salvos em planilha Excel segura! 📊_
                 "Use números com ponto ou vírgula (ex: 100.50 ou 100,50)",
                 parse_mode='Markdown'
             )
-            logger.error(f"Valor inválido no comando /gasto - {username}")
         except Exception as e:
             await update.message.reply_text("❌ Erro interno. Tente novamente.")
-            logger.error(f"Erro ao adicionar gasto - {username}: {e}")
+            logger.error(f"Erro ao adicionar gasto: {e}")
     
     async def ver_saldo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Ver saldo atual"""
@@ -354,11 +331,10 @@ _Atualizado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}_
             """
             
             await update.message.reply_text(msg, parse_mode='Markdown')
-            logger.info(f"Saldo consultado - {username}: R$ {saldo:.2f}")
             
         except Exception as e:
             await update.message.reply_text("❌ Erro ao consultar saldo.")
-            logger.error(f"Erro ao consultar saldo - {username}: {e}")
+            logger.error(f"Erro ao consultar saldo: {e}")
     
     async def ver_extrato(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Ver últimas transações"""
@@ -375,7 +351,6 @@ _Atualizado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}_
                     "Use `/receita` ou `/gasto` para adicionar transações.",
                     parse_mode='Markdown'
                 )
-                logger.info(f"Extrato vazio consultado - {username}")
                 return
             
             msg = f"📋 *Últimas {len(transacoes)} Transações:*\n\n"
@@ -384,24 +359,19 @@ _Atualizado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}_
                 emoji = "💵" if t['tipo'] == 'receita' else "💸"
                 data = pd.to_datetime(t['data_criacao']).strftime("%d/%m")
                 categoria = t['categoria'].title()
-                descricao = t['descricao'][:30] + "..." if len(str(t['descricao'])) > 30 else t['descricao']
+                descricao = str(t['descricao'])[:30] + "..." if len(str(t['descricao'])) > 30 else t['descricao']
                 
                 msg += f"{emoji} *{data}* - R$ {t['valor']:.2f}\n"
                 msg += f"   {categoria} - {descricao}\n\n"
             
-            msg += f"📁 *Dados salvos em:* {self.excel_file}"
-            
             await update.message.reply_text(msg, parse_mode='Markdown')
-            logger.info(f"Extrato consultado - {username}: {len(transacoes)} transações")
             
         except Exception as e:
             await update.message.reply_text("❌ Erro ao consultar extrato.")
-            logger.error(f"Erro ao consultar extrato - {username}: {e}")
+            logger.error(f"Erro ao consultar extrato: {e}")
     
     async def ver_categorias(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Ver categorias disponíveis"""
-        username = update.effective_user.username or update.effective_user.first_name or "Usuário"
-        
         try:
             receitas = ', '.join(self.config['categories']['receitas'])
             gastos = ', '.join(self.config['categories']['gastos'])
@@ -416,15 +386,13 @@ _Atualizado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}_
 {gastos}
 
 _Use estas categorias nos comandos `/receita` e `/gasto`_
-_Dados salvos automaticamente em Excel! 📊_
             """
             
             await update.message.reply_text(msg, parse_mode='Markdown')
-            logger.info(f"Categorias consultadas - {username}")
             
         except Exception as e:
             await update.message.reply_text("❌ Erro ao listar categorias.")
-            logger.error(f"Erro ao listar categorias - {username}: {e}")
+            logger.error(f"Erro ao listar categorias: {e}")
     
     async def backup_excel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Enviar backup do arquivo Excel"""
@@ -433,7 +401,6 @@ _Dados salvos automaticamente em Excel! 📊_
         
         try:
             if os.path.exists(self.excel_file):
-                # Criar backup personalizado para o usuário
                 df_user = self.read_excel_data(user_id)
                 
                 if not df_user.empty:
@@ -442,25 +409,19 @@ _Dados salvos automaticamente em Excel! 📊_
                     with pd.ExcelWriter(backup_filename, engine='openpyxl') as writer:
                         df_user.to_excel(writer, sheet_name='Minhas_Transacoes', index=False)
                     
-                    # Enviar arquivo
                     with open(backup_filename, 'rb') as file:
                         await update.message.reply_document(
                             document=file,
                             filename=backup_filename,
                             caption=f"📊 *Backup das suas transações*\n\n"
-                                   f"Total: {len(df_user)} transações\n"
-                                   f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}",
+                                   f"Total: {len(df_user)} transações",
                             parse_mode='Markdown'
                         )
                     
-                    # Remover arquivo temporário
                     os.remove(backup_filename)
-                    
-                    logger.info(f"Backup enviado - {username}: {len(df_user)} transações")
                 else:
                     await update.message.reply_text(
-                        "📭 *Nenhuma transação para backup.*\n\n"
-                        "Adicione algumas transações primeiro!",
+                        "📭 *Nenhuma transação para backup.*",
                         parse_mode='Markdown'
                     )
             else:
@@ -468,11 +429,12 @@ _Dados salvos automaticamente em Excel! 📊_
                 
         except Exception as e:
             await update.message.reply_text("❌ Erro ao gerar backup.")
-            logger.error(f"Erro ao gerar backup - {username}: {e}")
+            logger.error(f"Erro ao gerar backup: {e}")
 
-async def main():
+# FUNÇÃO SIMPLES PARA RAILWAY
+def run_bot():
+    """Executar bot - versão simplificada para Railway"""
     try:
-        # Inicializar bot
         bot = FinanceBot()
         
         # Configurar aplicação
@@ -489,11 +451,13 @@ async def main():
         app.add_handler(CommandHandler("backup", bot.backup_excel))
         
         logger.info("Bot iniciado com sucesso! Dados salvos em Excel.")
-        await app.run_polling()
+        
+        # RODAR EM POLLING SIMPLES
+        app.run_polling(drop_pending_updates=True)
         
     except Exception as e:
         logger.error(f"Erro crítico ao iniciar bot: {e}")
-        raise
 
+# Se executado diretamente (para testes locais)
 if __name__ == '__main__':
-    asyncio.run(main())
+    run_bot()

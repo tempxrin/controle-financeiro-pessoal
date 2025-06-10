@@ -1,76 +1,28 @@
-# start_services.py - Corrigido para Railway
+# start_services.py - Versão Final Corrigida
 import subprocess
 import threading
 import time
 import os
 import sys
 import logging
-import yaml
 
 # Configurar logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler()  # Apenas console para Railway
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-def load_config():
-    """Carregar configurações do YAML"""
-    try:
-        with open('config.yaml', 'r', encoding='utf-8') as file:
-            config = yaml.safe_load(file)
-            logger.info("Configurações carregadas com sucesso")
-            return config
-    except FileNotFoundError:
-        logger.error("Arquivo config.yaml não encontrado")
-        return None
-    except yaml.YAMLError as e:
-        logger.error(f"Erro ao carregar config.yaml: {e}")
-        return None
-
-def setup_excel_environment():
-    """Configurar ambiente Excel"""
-    logger.info("🔧 Configurando ambiente Excel...")
-    
-    config = load_config()
-    if not config:
-        return False
-    
-    try:
-        # Criar arquivo Excel se não existir
-        excel_file = config['storage']['excel_file']
-        
-        if not os.path.exists(excel_file):
-            import pandas as pd
-            
-            # Criar DataFrame vazio
-            df_empty = pd.DataFrame(columns=[
-                'id', 'user_id', 'username', 'tipo', 'valor', 
-                'categoria', 'descricao', 'data_criacao'
-            ])
-            
-            # Salvar arquivo Excel
-            with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
-                df_empty.to_excel(writer, sheet_name='Transacoes', index=False)
-            
-            logger.info(f"✅ Arquivo Excel criado: {excel_file}")
-        else:
-            logger.info(f"✅ Arquivo Excel encontrado: {excel_file}")
-        
-        return True
-        
-    except Exception as e:
-        logger.error(f"❌ Erro ao configurar Excel: {e}")
-        return False
-
 def run_bot():
-    """Executar bot do Telegram"""
+    """Executar bot do Telegram em subprocess"""
     logger.info("🤖 Iniciando bot do Telegram...")
     try:
-        subprocess.run([sys.executable, 'bot_telegram.py'], check=False)
+        # Importar e executar bot diretamente
+        from bot_telegram import run_bot
+        run_bot()
     except Exception as e:
         logger.error(f"❌ Erro no bot: {e}")
 
@@ -78,8 +30,8 @@ def run_dashboard():
     """Executar dashboard Streamlit"""
     logger.info("📊 Iniciando dashboard Streamlit...")
     
-    # IMPORTANTE: Usar PORT do Railway
-    port = os.getenv('PORT', '8501')
+    # Usar PORT do Railway
+    port = os.getenv('PORT', '8080')
     
     try:
         cmd = [
@@ -104,18 +56,42 @@ def check_environment():
     
     # Verificar token do Telegram
     telegram_token = os.getenv('TELEGRAM_TOKEN')
-    if not telegram_token:
-        # Tentar carregar do config
-        config = load_config()
-        if config:
-            telegram_token = config.get('telegram', {}).get('token')
     
-    if not telegram_token or telegram_token == "SEU_TOKEN_AQUI":
+    if not telegram_token:
         logger.error("❌ TELEGRAM_TOKEN não configurado")
         return False
     
     logger.info("✅ Ambiente verificado")
     return True
+
+def setup_excel():
+    """Configurar Excel inicial"""
+    logger.info("📊 Configurando Excel...")
+    
+    try:
+        import pandas as pd
+        
+        excel_file = "financeiro_pessoal.xlsx"
+        
+        if not os.path.exists(excel_file):
+            # Criar Excel vazio
+            df_empty = pd.DataFrame(columns=[
+                'id', 'user_id', 'username', 'tipo', 'valor', 
+                'categoria', 'descricao', 'data_criacao'
+            ])
+            
+            with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
+                df_empty.to_excel(writer, sheet_name='Transacoes', index=False)
+            
+            logger.info(f"✅ Arquivo Excel criado: {excel_file}")
+        else:
+            logger.info(f"✅ Arquivo Excel encontrado: {excel_file}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao configurar Excel: {e}")
+        return False
 
 def main():
     """Função principal"""
@@ -127,11 +103,10 @@ def main():
         sys.exit(1)
     
     # Configurar Excel
-    if not setup_excel_environment():
+    if not setup_excel():
         logger.error("❌ Falha na configuração do Excel")
         sys.exit(1)
     
-    # No Railway, executar bot em background e dashboard em foreground
     logger.info("🚄 Modo Railway - Iniciando serviços...")
     
     # Bot em thread separada
@@ -139,7 +114,7 @@ def main():
     bot_thread.start()
     logger.info("✅ Bot iniciado em background")
     
-    # Dashboard no processo principal (OBRIGATÓRIO para Railway)
+    # Dashboard no processo principal
     time.sleep(3)
     logger.info("✅ Iniciando dashboard...")
     run_dashboard()
