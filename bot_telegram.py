@@ -435,6 +435,12 @@ _Use estas categorias nos comandos `/receita` e `/gasto`_
 def run_bot():
     """Executar bot - versão simplificada para Railway"""
     try:
+        import asyncio
+        
+        # Criar novo event loop para esta thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         bot = FinanceBot()
         
         # Configurar aplicação
@@ -452,8 +458,8 @@ def run_bot():
         
         logger.info("Bot iniciado com sucesso! Dados salvos em Excel.")
         
-        # RODAR EM POLLING SIMPLES
-        app.run_polling(drop_pending_updates=True)
+        # RODAR EM POLLING COM EVENT LOOP CORRETO
+        loop.run_until_complete(app.run_polling(drop_pending_updates=True))
         
     except Exception as e:
         logger.error(f"Erro crítico ao iniciar bot: {e}")
