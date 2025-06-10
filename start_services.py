@@ -55,7 +55,7 @@ def check_environment():
     logger.info("🔍 Verificando ambiente...")
     
     # Verificar token do Telegram
-    telegram_token = os.getenv('TELEGRAM_TOKEN')
+    telegram_token = "7579338249:AAFYyZRwRSE93p8gLrAe7pICqyCxyoHSxdQ"
     
     if not telegram_token:
         logger.error("❌ TELEGRAM_TOKEN não configurado")
